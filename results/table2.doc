@@ -1,0 +1,34 @@
+{\rtf1\fs24
+\trowd\trgaph75\trleft-75\intbl\trqc\clbrdrt\brdrs\cellx4752\clbrdrt\brdrs\cellx6624\clbrdrt\brdrs\cellx9072\clbrdrt\brdrs\cellx10512\clbrdrt\brdrs\cellx13824\clbrdrt\brdrs\cellx15264\clbrdrt\brdrs\cellx18144\clbrdrt\brdrs\cellx19584\clbrdrt\brdrs\cellx22896\clbrdrt\brdrs\cellx26208\clbrdrt\brdrs\cellx27936
+\ql \cell\qc (1)\cell\qc (2)\cell\qc (3)\cell\qc (4)\cell\qc (5)\cell\qc (6)\cell\qc (7)\cell\qc (8)\cell\qc (9)\cell\qc (10)\cell\row
+\trowd\trgaph75\trleft-75\trqc\cellx4752\cellx6624\cellx9072\cellx10512\cellx13824\cellx15264\cellx18144\cellx19584\cellx22896\cellx26208\cellx27936
+\trowd\trgaph75\trleft-75\trqc\clbrdrb\brdrs\cellx4752\clbrdrb\brdrs\cellx6624\clbrdrb\brdrs\cellx9072\clbrdrb\brdrs\cellx10512\clbrdrb\brdrs\cellx13824\clbrdrb\brdrs\cellx15264\clbrdrb\brdrs\cellx18144\clbrdrb\brdrs\cellx19584\clbrdrb\brdrs\cellx22896\clbrdrb\brdrs\cellx26208\clbrdrb\brdrs\cellx27936
+\ql VARIABLES\cell\qc All counties\cell\qc Black Protestant\cell\qc Catholic\cell\qc Evangelical Protestant\cell\qc Islam\cell\qc Mainline Protestant\cell\qc Mormons\cell\qc Black Protestant Urban\cell\qc Black Protestant South\cell\qc Islam Urban\cell\row
+\trowd\trgaph75\trleft-75\trqc\cellx4752\cellx6624\cellx9072\cellx10512\cellx13824\cellx15264\cellx18144\cellx19584\cellx22896\cellx26208\cellx27936
+\ql \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\row
+\ql Percent 2020\cell\qc \cell\qc -0.905***\cell\qc 0.736***\cell\qc -0.289***\cell\qc -0.061\cell\qc 0.036\cell\qc 0.095\cell\qc -1.051***\cell\qc -0.473*\cell\qc -1.836**\cell\row
+\ql \cell\qc \cell\qc (0.182)\cell\qc (0.064)\cell\qc (0.074)\cell\qc (0.421)\cell\qc (0.076)\cell\qc (0.054)\cell\qc (0.223)\cell\qc (0.195)\cell\qc (0.570)\cell\row
+\ql Voting Trump 2020\cell\qc -0.686***\cell\qc -0.633***\cell\qc -0.587***\cell\qc -0.610***\cell\qc -0.584***\cell\qc -0.688***\cell\qc -0.769***\cell\qc -0.695***\cell\qc -0.479***\cell\qc -0.628***\cell\row
+\ql \cell\qc (0.046)\cell\qc (0.051)\cell\qc (0.042)\cell\qc (0.045)\cell\qc (0.064)\cell\qc (0.046)\cell\qc (0.051)\cell\qc (0.064)\cell\qc (0.064)\cell\qc (0.064)\cell\row
+\ql income1000\cell\qc 0.004***\cell\qc 0.004***\cell\qc 0.003***\cell\qc 0.004***\cell\qc 0.003***\cell\qc 0.004***\cell\qc 0.003***\cell\qc 0.003***\cell\qc 0.005***\cell\qc 0.004***\cell\row
+\ql \cell\qc (0.001)\cell\qc (0.001)\cell\qc (0.000)\cell\qc (0.001)\cell\qc (0.000)\cell\qc (0.001)\cell\qc (0.001)\cell\qc (0.001)\cell\qc (0.001)\cell\qc (0.000)\cell\row
+\ql Metropolitan county = 0, omitted\cell\qc 0.033\cell\qc 0.019\cell\qc 0.038**\cell\qc 0.035*\cell\qc -0.019\cell\qc 0.032\cell\qc 0.022\cell\qc \cell\qc 0.039\cell\qc \cell\row
+\ql \cell\qc (0.017)\cell\qc (0.022)\cell\qc (0.013)\cell\qc (0.016)\cell\qc (0.025)\cell\qc (0.017)\cell\qc (0.020)\cell\qc \cell\qc (0.034)\cell\qc \cell\row
+\ql region = 2, Midwest\cell\qc -0.139***\cell\qc -0.148***\cell\qc -0.111***\cell\qc -0.122***\cell\qc -0.128***\cell\qc -0.140***\cell\qc -0.116***\cell\qc -0.135***\cell\qc \cell\qc -0.120***\cell\row
+\ql \cell\qc (0.012)\cell\qc (0.015)\cell\qc (0.013)\cell\qc (0.013)\cell\qc (0.013)\cell\qc (0.013)\cell\qc (0.013)\cell\qc (0.014)\cell\qc \cell\qc (0.014)\cell\row
+\ql region = 3, West\cell\qc -0.108***\cell\qc -0.070***\cell\qc -0.076***\cell\qc -0.102***\cell\qc -0.068***\cell\qc -0.105***\cell\qc -0.098***\cell\qc -0.092***\cell\qc \cell\qc -0.103***\cell\row
+\ql \cell\qc (0.015)\cell\qc (0.018)\cell\qc (0.016)\cell\qc (0.015)\cell\qc (0.019)\cell\qc (0.015)\cell\qc (0.016)\cell\qc (0.015)\cell\qc \cell\qc (0.017)\cell\row
+\ql region = 4, South\cell\qc -0.033*\cell\qc -0.070***\cell\qc 0.043*\cell\qc 0.023\cell\qc -0.127***\cell\qc -0.033*\cell\qc -0.037*\cell\qc -0.093***\cell\qc \cell\qc -0.135***\cell\row
+\ql \cell\qc (0.015)\cell\qc (0.017)\cell\qc (0.017)\cell\qc (0.024)\cell\qc (0.017)\cell\qc (0.015)\cell\qc (0.018)\cell\qc (0.022)\cell\qc \cell\qc (0.017)\cell\row
+\ql Constant\cell\qc -2.061***\cell\qc -2.048***\cell\qc -2.208***\cell\qc -2.054***\cell\qc -2.034***\cell\qc -2.060***\cell\qc -1.983***\cell\qc -1.924***\cell\qc -2.337***\cell\qc -2.001***\cell\row
+\ql \cell\qc (0.052)\cell\qc (0.062)\cell\qc (0.043)\cell\qc (0.054)\cell\qc (0.052)\cell\qc (0.053)\cell\qc (0.062)\cell\qc (0.076)\cell\qc (0.098)\cell\qc (0.051)\cell\row
+\ql \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\qc \cell\row
+\ql Observations\cell\qc 65,064\cell\qc 36,407\cell\qc 61,291\cell\qc 64,651\cell\qc 13,923\cell\qc 64,483\cell\qc 39,158\cell\qc 18,438\cell\qc 24,234\cell\qc 11,340\cell\row
+\ql Number of countynum\cell\qc 3,101\cell\qc 1,734\cell\qc 2,921\cell\qc 3,081\cell\qc 663\cell\qc 3,073\cell\qc 1,867\cell\qc 878\cell\qc 1,154\cell\qc 540\cell\row
+\ql Mean VIF\cell\qc 1.268\cell\qc 1.456\cell\qc 1.272\cell\qc 1.311\cell\qc 1.156\cell\qc 1.257\cell\qc 1.258\cell\qc 1.281\cell\qc 1.316\cell\qc 1.158\cell\row
+\trowd\trgaph75\trleft-75\trqc\trbrdrb\brdrs\clbrdrb\brdrs\cellx4752\clbrdrb\brdrs\cellx6624\clbrdrb\brdrs\cellx9072\clbrdrb\brdrs\cellx10512\clbrdrb\brdrs\cellx13824\clbrdrb\brdrs\cellx15264\clbrdrb\brdrs\cellx18144\clbrdrb\brdrs\cellx19584\clbrdrb\brdrs\cellx22896\clbrdrb\brdrs\cellx26208\clbrdrb\brdrs\cellx27936
+\ql R2\cell\qc 0.0113\cell\qc 0.0964\cell\qc 0.0587\cell\qc 0.0162\cell\qc 0.0769\cell\qc 0.0151\cell\qc 0.213\cell\qc 0.0686\cell\qc 0.0988\cell\qc 0.0624\cell\row
+\pard\qc
+Standard errors in parentheses\par
+*** p<0.001, ** p<0.01, * p<0.05\par
+}

@@ -1,0 +1,1506 @@
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table2.log
+  log type:  text
+ opened on:   5 May 2025, 10:24:47
+
+. 
+. *==========================================================
+. * all counties
+. *==========================================================
+. ** merge datasets
+. use "$data/acs.dta", clear
+
+. merge 1:1 countyfips using "$data/voting.dta", gen(mg1)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                           149
+        from master                       109  (mg1==1)
+        from using                         40  (mg1==2)
+
+    matched                             3,112  (mg1==3)
+    -----------------------------------------
+
+. drop mg1
+
+. replace trump = 9.28125 if countyfips == "46102"
+(1 real change made)
+
+. replace popden = 6.81935 if countyfips == "46113"
+(1 real change made)
+
+. replace income1000 = 31.423 if countyfips == "46113"
+(1 real change made)
+
+. replace countyname = "Oglala Lakota County, South Dakota" if countyfips == "46113"
+(1 real change made)
+
+. gen stfips = substr(countyfips, 1, 2)
+
+. drop if inlist(stfips, "02","15","72")
+(151 observations deleted)
+
+. drop stfips
+
+. drop if countyfips == "36000"
+(1 observation deleted)
+
+. drop if countyfips == "46102"
+(1 observation deleted)
+
+. unique countyfips
+Number of unique values of countyfips is  3108
+Number of records is  3108
+
+. 
+. merge 1:m countyfips using "$data/covid.dta", gen(mg3)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                        60,676
+        from master                         1  (mg3==1)
+        from using                     60,675  (mg3==2)
+
+    matched                         1,606,873  (mg3==3)
+    -----------------------------------------
+
+. gen stfips = substr(countyfips, 1, 2)
+
+. drop if inlist(stfips, "02", "15", "66", "72", "78")
+(60,155 observations deleted)
+
+. unique countyfips
+Number of unique values of countyfips is  3109
+Number of records is  1607394
+
+. 
+. tempfile all_county
+
+. save `all_county'
+file C:\Users\Neo\AppData\Local\Temp\ST_35a4_000001.tmp saved
+
+. 
+. ** monthly vaccination rate
+. use `all_county', clear
+
+. keep countyfips monthly income1000 trump met countynum day week month year pop
+
+. bysort countyfips monthly: gen var1 = _n
+
+. keep if var1 == 1
+(1,542,126 observations deleted)
+
+. drop var1
+
+. tempfile county_data_monthly
+
+. save `county_data_monthly'
+file C:\Users\Neo\AppData\Local\Temp\ST_35a4_000002.tmp saved
+
+. 
+. use `all_county', clear
+
+. keep countyfips monthly dr pop
+
+. collapse (mean) mr = dr [w=pop], by(countyfips monthly)
+(analytic weights assumed)
+
+. tempfile vac_monthly
+
+. save `vac_monthly'
+file C:\Users\Neo\AppData\Local\Temp\ST_35a4_000003.tmp saved
+
+. 
+. use `county_data_monthly', clear
+
+. merge 1:1 countyfips monthly using `vac_monthly', gen(mg)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             1
+        from master                         1  (mg==1)
+        from using                          0  (mg==2)
+
+    matched                            65,267  (mg==3)
+    -----------------------------------------
+
+. tab mg, mi
+
+                     mg |      Freq.     Percent        Cum.
+------------------------+-----------------------------------
+        master only (1) |          1        0.00        0.00
+            matched (3) |     65,267      100.00      100.00
+------------------------+-----------------------------------
+                  Total |     65,268      100.00
+
+. drop mg
+
+. label variable mr "Monthly vaccination rate"
+
+. order countyfips monthly mr
+
+. 
+. ** generate regions based on census
+. gen sfips = substr(countyfips, 1, 2)
+
+. destring sfips, replace
+sfips: all characters numeric; replaced as byte
+
+. gen region = 1 if inlist(sfips, 9,23,25,33,44,50,34,36,42)
+(60,711 missing values generated)
+
+. replace region = 2 if inlist(sfips, 18,17,26,39,55,19,20,27,29,31,38,46)
+(22,156 real changes made)
+
+. replace region = 3 if inlist(sfips, 4,8,16,35,30,49,32,56,6,41,53)
+(8,694 real changes made)
+
+. replace region = 4 if region == .
+(29,861 real changes made)
+
+. label define region 1 "Northeast" 2 "Midwest" 3 "West" 4 "South"
+
+. label values region region
+
+. 
+. ** merge with racial composition data
+. merge 1:1 countyfips monthly using "$data/resdata_for_desc.dta", gen(mg)
+(label region already defined)
+(label metro already defined)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             1
+        from master                         1  (mg==1)
+        from using                          0  (mg==2)
+
+    matched                            65,267  (mg==3)
+    -----------------------------------------
+
+. keep if mg == 3
+(1 observation deleted)
+
+. drop mg
+
+. 
+. ** re-scale percentage
+. foreach v of varlist trump pcthis pctbla pctwhi pctasi pctcol {
+  2.         replace `v' = `v' / 100
+  3. }
+(65,204 real changes made)
+(64,931 real changes made)
+(63,377 real changes made)
+(65,267 real changes made)
+(60,038 real changes made)
+(65,246 real changes made)
+
+. 
+. *==========================================================
+. * all counties
+. *==========================================================
+. ** independent variables to macro
+. local ivs_allcounty trump income1000
+
+. 
+. xtset countynum monthly
+       panel variable:  countynum (unbalanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_allcounty' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00131598
+Iteration 2: tolerance = 5.853e-06
+Iteration 3: tolerance = 1.916e-08
+
+GEE population-averaged model                   Number of obs     =     65,064
+Group variable:                  countynum      Number of groups  =      3,101
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(6)      =    1450.03
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       trump |  -.6855144   .0460398   -14.89   0.000    -.7757508   -.5952781
+  income1000 |   .0040285   .0005275     7.64   0.000     .0029945    .0050624
+             |
+       metro |
+  Non-metro  |   .0325666    .016746     1.94   0.052    -.0002549    .0653882
+             |
+      region |
+    Midwest  |  -.1385583   .0122493   -11.31   0.000    -.1625665   -.1145501
+       West  |  -.1076624    .014824    -7.26   0.000     -.136717   -.0786079
+      South  |  -.0325282   .0152471    -2.13   0.033    -.0624119   -.0026445
+             |
+       _cons |  -2.061241   .0524277   -39.32   0.000    -2.163998   -1.958485
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_all.dta", pval ci replace
+(note: file data/reg_results_all.dta not found)
+file data/reg_results_all.dta saved
+
+. 
+. collin `ivs_allcounty' met
+(obs=65,183)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+     trump      1.16    1.08    0.8628      0.1372
+income1000      1.29    1.14    0.7754      0.2246
+     metro      1.35    1.16    0.7385      0.2615
+----------------------------------------------------
+  Mean VIF      1.27
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.3729          1.0000
+    2     0.5554          2.4643
+    3     0.0565          7.7279
+    4     0.0153         14.8648
+---------------------------------
+ Condition Number        14.8648 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.6825
+
+. return list
+
+scalars:
+                 r(cn) =  14.86478257774893
+              r(m_vif) =  1.267607036036796
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(84 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(203 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(119 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.01129058
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", replace stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("All counties") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. *==========================================================
+. * county with different religions
+. *==========================================================
+. ** independent variables to macro
+. local ivs_religion pct2020 trump income1000
+
+. 
+. ** Black Protestant
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 1
+(258,675 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(38,556 real changes made)
+(36,477 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00062407
+Iteration 2: tolerance = 1.339e-06
+Iteration 3: tolerance = 4.770e-09
+
+GEE population-averaged model                   Number of obs     =     36,407
+Group variable:                  countynum      Number of groups  =      1,734
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =    1145.05
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |  -.9051664   .1824175    -4.96   0.000    -1.262698   -.5476347
+       trump |  -.6325701   .0510807   -12.38   0.000    -.7326864   -.5324538
+  income1000 |    .003791   .0006014     6.30   0.000     .0026123    .0049696
+             |
+       metro |
+  Non-metro  |   .0191444   .0219043     0.87   0.382    -.0237873    .0620761
+             |
+      region |
+    Midwest  |  -.1481675   .0146636   -10.10   0.000    -.1769076   -.1194274
+       West  |  -.0701825   .0180872    -3.88   0.000    -.1056327   -.0347322
+      South  |  -.0701005   .0171346    -4.09   0.000    -.1036836   -.0365173
+             |
+       _cons |  -2.047708   .0617896   -33.14   0.000    -2.168814   -1.926603
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_bp.dta", pval ci replace
+(note: file data/reg_results_bp.dta not found)
+file data/reg_results_bp.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=36,435)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.33    1.15    0.7503      0.2497
+     trump      1.36    1.17    0.7339      0.2661
+income1000      1.65    1.28    0.6067      0.3933
+     metro      1.48    1.22    0.6764      0.3236
+----------------------------------------------------
+  Mean VIF      1.46
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.8513          1.0000
+    2     0.6915          2.3600
+    3     0.3848          3.1637
+    4     0.0602          7.9977
+    5     0.0122         17.7497
+---------------------------------
+ Condition Number        17.7497 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.4653
+
+. return list
+
+scalars:
+                 r(cn) =  17.74966735384375
+              r(m_vif) =  1.455531322198445
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(2,163 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(2,191 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(35 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.09643569
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Black Protestant") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** Catholic
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 2
+(233,455 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(63,755 real changes made)
+(61,487 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (unbalanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00256168
+Iteration 2: tolerance = .00001315
+Iteration 3: tolerance = 6.545e-08
+
+GEE population-averaged model                   Number of obs     =     61,291
+Group variable:                  countynum      Number of groups  =      2,921
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =    1356.32
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |   .7364866   .0637276    11.56   0.000     .6115828    .8613903
+       trump |  -.5867934   .0421034   -13.94   0.000    -.6693145   -.5042723
+  income1000 |   .0030205   .0004796     6.30   0.000     .0020806    .0039605
+             |
+       metro |
+  Non-metro  |   .0378718    .013045     2.90   0.004     .0123042    .0634395
+             |
+      region |
+    Midwest  |  -.1107096   .0134488    -8.23   0.000    -.1370688   -.0843503
+       West  |  -.0760666   .0155485    -4.89   0.000    -.1065411   -.0455921
+      South  |   .0425443    .017197     2.47   0.013     .0088389    .0762497
+             |
+       _cons |  -2.207533   .0429488   -51.40   0.000    -2.291712   -2.123355
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_ca.dta", pval ci replace
+(note: file data/reg_results_ca.dta not found)
+file data/reg_results_ca.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=61,403)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.12    1.06    0.8969      0.1031
+     trump      1.21    1.10    0.8235      0.1765
+income1000      1.38    1.18    0.7243      0.2757
+     metro      1.38    1.17    0.7256      0.2744
+----------------------------------------------------
+  Mean VIF      1.27
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.9550          1.0000
+    2     0.5600          2.6576
+    3     0.4201          3.0684
+    4     0.0502          8.8745
+    5     0.0147         16.4295
+---------------------------------
+ Condition Number        16.4295 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.5980
+
+. return list
+
+scalars:
+                 r(cn) =  16.42952019500637
+              r(m_vif) =  1.272032810634323
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(2,415 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(2,527 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(112 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.05867006
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Catholic") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** Evangelical Protestant
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 3
+(232,153 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(65,057 real changes made)
+(64,826 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (unbalanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00130151
+Iteration 2: tolerance = 9.409e-06
+Iteration 3: tolerance = 4.395e-08
+
+GEE population-averaged model                   Number of obs     =     64,651
+Group variable:                  countynum      Number of groups  =      3,081
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =    1440.17
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |  -.2893145   .0741385    -3.90   0.000    -.4346233   -.1440057
+       trump |  -.6101344    .045093   -13.53   0.000     -.698515   -.5217538
+  income1000 |   .0036587   .0005797     6.31   0.000     .0025224     .004795
+             |
+       metro |
+  Non-metro  |   .0352459   .0162051     2.17   0.030     .0034845    .0670074
+             |
+      region |
+    Midwest  |   -.122229   .0131545    -9.29   0.000    -.1480114   -.0964466
+       West  |  -.1021592   .0150634    -6.78   0.000     -.131683   -.0726354
+      South  |   .0227383   .0236328     0.96   0.336     -.023581    .0690577
+             |
+       _cons |  -2.054482   .0538636   -38.14   0.000    -2.160053   -1.948911
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_ep.dta", pval ci replace
+(note: file data/reg_results_ep.dta not found)
+file data/reg_results_ep.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=64,763)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.22    1.10    0.8190      0.1810
+     trump      1.26    1.12    0.7954      0.2046
+income1000      1.40    1.18    0.7147      0.2853
+     metro      1.37    1.17    0.7322      0.2678
+----------------------------------------------------
+  Mean VIF      1.31
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     4.0241          1.0000
+    2     0.6429          2.5019
+    3     0.2722          3.8451
+    4     0.0459          9.3620
+    5     0.0150         16.3973
+---------------------------------
+ Condition Number        16.3973 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.5594
+
+. return list
+
+scalars:
+                 r(cn) =  16.39730818321602
+              r(m_vif) =  1.31083271838938
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(357 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(469 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(119 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.01617283
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Evangelical Protestant") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** Islam
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 4
+(282,111 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(15,120 real changes made)
+(13,986 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = 3.513e-11
+
+GEE population-averaged model                   Number of obs     =     13,923
+Group variable:                  countynum      Number of groups  =        663
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         21
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =     779.27
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |  -.0606481   .4214969    -0.14   0.886    -.8867668    .7654706
+       trump |  -.5838906   .0643888    -9.07   0.000    -.7100904   -.4576908
+  income1000 |    .003341   .0004153     8.05   0.000     .0025271    .0041549
+             |
+       metro |
+  Non-metro  |  -.0185969   .0249773    -0.74   0.457    -.0675515    .0303577
+             |
+      region |
+    Midwest  |  -.1276978   .0126499   -10.09   0.000    -.1524912   -.1029044
+       West  |  -.0683743   .0186978    -3.66   0.000    -.1050214   -.0317273
+      South  |   -.126613   .0166255    -7.62   0.000    -.1591983   -.0940276
+             |
+       _cons |  -2.033651   .0518486   -39.22   0.000    -2.135272   -1.932029
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_is.dta", pval ci replace
+(note: file data/reg_results_is.dta not found)
+file data/reg_results_is.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=13,944)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.03    1.01    0.9735      0.0265
+     trump      1.18    1.09    0.8462      0.1538
+income1000      1.21    1.10    0.8282      0.1718
+     metro      1.21    1.10    0.8282      0.1718
+----------------------------------------------------
+  Mean VIF      1.16
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.8992          1.0000
+    2     0.8324          2.1644
+    3     0.1817          4.6329
+    4     0.0688          7.5285
+    5     0.0180         14.7354
+---------------------------------
+ Condition Number        14.7354 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.7334
+
+. return list
+
+scalars:
+                 r(cn) =  14.73540359426652
+              r(m_vif) =  1.155940392464754
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(1,218 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(1,239 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(21 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.07693762
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Islam") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** Mainline Protestant
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 5
+(232,279 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(64,931 real changes made)
+(64,574 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (unbalanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00109562
+Iteration 2: tolerance = 7.006e-06
+Iteration 3: tolerance = 5.825e-08
+
+GEE population-averaged model                   Number of obs     =     64,483
+Group variable:                  countynum      Number of groups  =      3,073
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =    1451.09
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |   .0364938   .0755131     0.48   0.629    -.1115092    .1844967
+       trump |  -.6877242   .0462353   -14.87   0.000    -.7783437   -.5971047
+  income1000 |   .0039873   .0005249     7.60   0.000     .0029586     .005016
+             |
+       metro |
+  Non-metro  |   .0315402   .0170407     1.85   0.064    -.0018589    .0649392
+             |
+      region |
+    Midwest  |  -.1401435   .0134637   -10.41   0.000    -.1665319   -.1137551
+       West  |  -.1047371   .0153634    -6.82   0.000    -.1348488   -.0746255
+      South  |  -.0331747   .0152239    -2.18   0.029     -.063013   -.0033364
+             |
+       _cons |  -2.059709   .0530202   -38.85   0.000    -2.163626   -1.955791
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_mp.dta", pval ci replace
+(note: file data/reg_results_mp.dta not found)
+file data/reg_results_mp.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=64,595)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.09    1.04    0.9191      0.0809
+     trump      1.18    1.08    0.8507      0.1493
+income1000      1.34    1.16    0.7467      0.2533
+     metro      1.43    1.19    0.7010      0.2990
+----------------------------------------------------
+  Mean VIF      1.26
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.9484          1.0000
+    2     0.6864          2.3984
+    3     0.2944          3.6623
+    4     0.0558          8.4135
+    5     0.0151         16.1860
+---------------------------------
+ Condition Number        16.1860 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.6253
+
+. return list
+
+scalars:
+                 r(cn) =  16.18595200288179
+              r(m_vif) =  1.257319950961324
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(399 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(511 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(112 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.01510402
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Mainline Protestant") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** Mormons
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 6
+(247,692 observations deleted)
+
+. foreach v of varlist trump pct2020 {
+  2.         replace `v' = `v' / 100
+  3. }
+(49,518 real changes made)
+(39,312 real changes made)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = .00172954
+Iteration 2: tolerance = 7.099e-06
+Iteration 3: tolerance = 1.585e-08
+
+GEE population-averaged model                   Number of obs     =     39,158
+Group variable:                  countynum      Number of groups  =      1,867
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         14
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(7)      =    1215.96
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |   .0949663   .0543619     1.75   0.081     -.011581    .2015137
+       trump |  -.7685033   .0509082   -15.10   0.000    -.8682816    -.668725
+  income1000 |   .0034708     .00061     5.69   0.000     .0022752    .0046664
+             |
+       metro |
+  Non-metro  |     .02219   .0202405     1.10   0.273    -.0174806    .0618606
+             |
+      region |
+    Midwest  |   -.116281   .0127947    -9.09   0.000     -.141358   -.0912039
+       West  |  -.0981901    .016165    -6.07   0.000     -.129873   -.0665073
+      South  |  -.0370496   .0179026    -2.07   0.038     -.072138   -.0019612
+             |
+       _cons |  -1.983267    .061622   -32.18   0.000    -2.104044    -1.86249
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_mo.dta", pval ci replace
+(note: file data/reg_results_mo.dta not found)
+file data/reg_results_mo.dta saved
+
+. 
+. collin `ivs_religion' met
+(obs=39,249)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.05    1.02    0.9563      0.0437
+     trump      1.26    1.12    0.7927      0.2073
+income1000      1.34    1.16    0.7451      0.2549
+     metro      1.38    1.18    0.7232      0.2768
+----------------------------------------------------
+  Mean VIF      1.26
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.6087          1.0000
+    2     0.8857          2.0185
+    3     0.4301          2.8966
+    4     0.0607          7.7078
+    5     0.0147         15.6581
+---------------------------------
+ Condition Number        15.6581 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.6128
+
+. return list
+
+scalars:
+                 r(cn) =  15.6581344861566
+              r(m_vif) =  1.258036032488179
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(10,332 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(10,423 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(98 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.21279182
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Mormons") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** black protestant urban
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 1
+(258,675 observations deleted)
+
+. merge m:1 countyfips using "$data/county_new_vars.dta", gen(mg)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         1,270
+        from master                         0  (mg==1)
+        from using                      1,270  (mg==2)
+
+    matched                            38,598  (mg==3)
+    -----------------------------------------
+
+. keep if mg == 3
+(1,270 observations deleted)
+
+. keep if metro == 1
+(19,404 observations deleted)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. foreach v of varlist pct2020 trump pcthis pctbla pctwhi pctasi pctcol {
+  2.         replace `v' = `v' / 100
+  3. }
+(18,501 real changes made)
+(19,152 real changes made)
+(19,173 real changes made)
+(19,194 real changes made)
+(19,194 real changes made)
+(18,942 real changes made)
+(19,194 real changes made)
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = 9.246e-13
+
+GEE population-averaged model                   Number of obs     =     18,438
+Group variable:                  countynum      Number of groups  =        878
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         21
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(6)      =     724.43
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |  -1.050869   .2229532    -4.71   0.000     -1.48785   -.6138893
+       trump |  -.6947431   .0639792   -10.86   0.000    -.8201401   -.5693461
+  income1000 |   .0026538   .0007204     3.68   0.000     .0012418    .0040659
+             |
+      region |
+    Midwest  |  -.1347916   .0143494    -9.39   0.000     -.162916   -.1066672
+       West  |  -.0916221    .015025    -6.10   0.000    -.1210706   -.0621736
+      South  |  -.0930679   .0216879    -4.29   0.000    -.1355754   -.0505603
+             |
+       _cons |   -1.92423   .0764259   -25.18   0.000    -2.074022   -1.774437
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_bpu.dta", pval ci replace
+(note: file data/reg_results_bpu.dta not found)
+file data/reg_results_bpu.dta saved
+
+. 
+. collin `ivs_religion'
+(obs=18,459)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.26    1.12    0.7941      0.2059
+     trump      1.22    1.10    0.8216      0.1784
+income1000      1.37    1.17    0.7321      0.2679
+----------------------------------------------------
+  Mean VIF      1.28
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.2888          1.0000
+    2     0.6034          2.3346
+    3     0.0950          5.8832
+    4     0.0127         16.0609
+---------------------------------
+ Condition Number        16.0609 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.7156
+
+. return list
+
+scalars:
+                 r(cn) =  16.06090138174093
+              r(m_vif) =  1.280807080716328
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(735 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(756 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(21 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.0686015
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Black Protestant Urban") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** black protestant south
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 1
+(258,675 observations deleted)
+
+. merge m:1 countyfips using "$data/county_new_vars.dta", gen(mg)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         1,270
+        from master                         0  (mg==1)
+        from using                      1,270  (mg==2)
+
+    matched                            38,598  (mg==3)
+    -----------------------------------------
+
+. keep if mg == 3
+(1,270 observations deleted)
+
+. keep if inlist(sfips, 12, 13, 45, 37, 51, 24, 10, 21, 47, 1, 28, 22, 5, 29, 40, 48)
+(13,167 observations deleted)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. foreach v of varlist pct2020 trump pcthis pctbla pctwhi pctasi pctcol {
+  2.         replace `v' = `v' / 100
+  3. }
+(24,234 real changes made)
+(25,431 real changes made)
+(25,368 real changes made)
+(25,410 real changes made)
+(25,431 real changes made)
+(23,898 real changes made)
+(25,431 real changes made)
+
+. xtnbreg mr `ivs_religion' i.b1.met, pa vce(robust)
+
+Iteration 1: tolerance = 8.599e-12
+
+GEE population-averaged model                   Number of obs     =     24,234
+Group variable:                  countynum      Number of groups  =      1,154
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         21
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(4)      =     265.80
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |  -.4730068   .1946467    -2.43   0.015    -.8545073   -.0915063
+       trump |  -.4791311   .0639688    -7.49   0.000    -.6045077   -.3537545
+  income1000 |   .0053411   .0009474     5.64   0.000     .0034841     .007198
+             |
+       metro |
+  Non-metro  |    .039418   .0337833     1.17   0.243     -.026796     .105632
+             |
+       _cons |  -2.336753   .0980493   -23.83   0.000    -2.528926    -2.14458
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_bps.dta", pval ci replace
+(note: file data/reg_results_bps.dta not found)
+file data/reg_results_bps.dta saved
+
+. 
+. collin `ivs_religion'
+(obs=24,234)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.43    1.20    0.6988      0.3012
+     trump      1.29    1.14    0.7733      0.2267
+income1000      1.22    1.11    0.8170      0.1830
+----------------------------------------------------
+  Mean VIF      1.32
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.3711          1.0000
+    2     0.5388          2.5014
+    3     0.0775          6.5935
+    4     0.0126         16.3833
+---------------------------------
+ Condition Number        16.3833 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.6889
+
+. return list
+
+scalars:
+                 r(cn) =  16.38329385116879
+              r(m_vif) =  1.316043364968765
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(1,197 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(1,197 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.09878228
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Black Protestant South") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. ** islam urban
+. use "$data/resdata_all_religions.dta", clear
+
+. keep if cate == 4
+(282,111 observations deleted)
+
+. merge m:1 countyfips using "$data/county_new_vars.dta", gen(mg)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         2,386
+        from master                         0  (mg==1)
+        from using                      2,386  (mg==2)
+
+    matched                            15,162  (mg==3)
+    -----------------------------------------
+
+. keep if mg == 3
+(2,386 observations deleted)
+
+. keep if metro == 1
+(3,192 observations deleted)
+
+. xtset countynum monthly
+       panel variable:  countynum (strongly balanced)
+        time variable:  monthly, 2021m2 to 2022m10
+                delta:  1 month
+
+. foreach v of varlist pct2020 trump {
+  2.         replace `v' = `v' / 100
+  3. }
+(11,403 real changes made)
+(11,928 real changes made)
+
+. xtnbreg mr `ivs_religion' i.b1.met i.region, pa vce(robust)
+
+Iteration 1: tolerance = 2.921e-12
+
+GEE population-averaged model                   Number of obs     =     11,340
+Group variable:                  countynum      Number of groups  =        540
+Link:                                  log      Obs per group:
+Family:             negative binomial(k=1)                    min =         21
+Correlation:                  exchangeable                    avg =       21.0
+                                                              max =         21
+                                                Wald chi2(6)      =     620.41
+Scale parameter:                         1      Prob > chi2       =     0.0000
+
+                              (Std. Err. adjusted for clustering on countynum)
+------------------------------------------------------------------------------
+             |             Semirobust
+          mr |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     pct2020 |   -1.83562   .5696975    -3.22   0.001    -2.952207   -.7190337
+       trump |  -.6277312   .0639246    -9.82   0.000     -.753021   -.5024413
+  income1000 |   .0036146   .0003969     9.11   0.000     .0028366    .0043925
+             |
+      region |
+    Midwest  |  -.1202852   .0138487    -8.69   0.000    -.1474281   -.0931424
+       West  |  -.1034962    .016902    -6.12   0.000    -.1366236   -.0703689
+      South  |  -.1350343   .0173838    -7.77   0.000     -.169106   -.1009626
+             |
+       _cons |  -2.001336   .0505901   -39.56   0.000    -2.100491   -1.902181
+------------------------------------------------------------------------------
+
+. 
+. regsave using "$data/reg_results_isu.dta", pval ci replace
+(note: file data/reg_results_isu.dta not found)
+file data/reg_results_isu.dta saved
+
+. 
+. collin `ivs_religion'
+(obs=11,361)
+
+  Collinearity Diagnostics
+
+                        SQRT                   R-
+  Variable      VIF     VIF    Tolerance    Squared
+----------------------------------------------------
+   pct2020      1.18    1.09    0.8484      0.1516
+     trump      1.20    1.10    0.8330      0.1670
+income1000      1.09    1.05    0.9137      0.0863
+----------------------------------------------------
+  Mean VIF      1.16
+
+                           Cond
+        Eigenval          Index
+---------------------------------
+    1     3.3385          1.0000
+    2     0.5640          2.4330
+    3     0.0791          6.4963
+    4     0.0184         13.4777
+---------------------------------
+ Condition Number        13.4777 
+ Eigenvalues & Cond Index computed from scaled raw sscp (w/ intercept)
+ Det(correlation matrix)    0.7914
+
+. return list
+
+scalars:
+                 r(cn) =  13.47768428637755
+              r(m_vif) =  1.15787864467269
+
+. local meanvif = r(m_vif)
+
+. 
+. predict mrhat
+(option mu assumed; Exponentiated linear prediction)
+(609 missing values generated)
+
+. gen resid2 = (mr - mrhat) ^ 2
+(630 missing values generated)
+
+. gen ssr = sum(resid2)
+
+. egen mrmean = mean(mr)
+
+. gen diff2 = (mr - mrmean) ^ 2
+(21 missing values generated)
+
+. egen sst = sum(diff2)
+
+. dis 1 - ssr[_N] / sst[_N]
+.06239191
+
+. local r2 = 1 - ssr[_N] / sst[_N]
+
+. 
+. outreg2 using "$results/table2.doc", append stats(coef se) ///
+>         addstat("Mean VIF", `meanvif', "R2", `r2') ///
+>         label nodepvar ctitle("Islam Urban") ///
+>         dec(3) alpha(0.001, 0.01, 0.05) symbol(***, **, *)
+results/table2.doc
+dir : seeout
+
+. 
+. 
+. *==========================================================
+. * delete txt file
+. *==========================================================
+. cd "$results"
+C:\Users\Neo\Desktop\Religion_COVID\results
+
+. local txtfiles: dir . files "*.txt"
+
+. foreach txt of local txtfiles {
+  2.         erase `txt'
+  3. }
+
+. 
+. *==========================================================
+. * end logging
+. *==========================================================
+. // clear
+. log close _all
+      name:  <unnamed>
+       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table2.log
+  log type:  text
+ closed on:   5 May 2025, 10:25:16
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,215 @@
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table1.log
+  log type:  text
+ opened on:   5 May 2025, 10:10:24
+
+. 
+. *==========================================================
+. * descriptive statistics
+. *==========================================================
+. ** religious population
+. use "$data/resdata_all_religions.dta", clear
+
+. tab cate, mi
+
+                  cate |      Freq.     Percent        Cum.
+-----------------------+-----------------------------------
+      Black Protestant |     38,598       12.98       12.98
+              Catholic |     63,818       21.47       34.45
+Evangelical Protestant |     65,120       21.91       56.36
+                 Islam |     15,162        5.10       61.46
+   Mainline Protestant |     64,994       21.86       83.32
+               Mormons |     49,581       16.68      100.00
+-----------------------+-----------------------------------
+                 Total |    297,273      100.00
+
+. keep countyfips pct2020 cate
+
+. bysort countyfips cate: gen ord = _n
+
+. keep if ord == 1
+(283,117 observations deleted)
+
+. des, s
+
+Contains data from data/resdata_all_religions.dta
+  obs:        14,156                          
+ vars:             4                          13 Sep 2023 16:31
+Sorted by: countyfips  cate
+     Note: Dataset has changed since last saved.
+
+. nmissing
+
+pct2020           785
+
+. sum pct2020
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+     pct2020 |     13,371    11.30423    14.18505          0     452.45
+
+. drop ord
+
+. label list cate
+cate:
+           1 Black Protestant
+           2 Catholic
+           3 Evangelical Protestant
+           4 Islam
+           5 Mainline Protestant
+           6 Mormons
+
+. reshape wide pct2020, i(countyfips) j(cate)
+(note: j = 1 2 3 4 5 6)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                    14156   ->    3108
+Number of variables                   3   ->       7
+j variable (6 values)              cate   ->   (dropped)
+xij variables:
+                                pct2020   ->   pct20201 pct20202 ... pct20206
+-----------------------------------------------------------------------------
+
+. rename pct20201 pct_bp
+
+. rename pct20202 pct_ca
+
+. rename pct20203 pct_ep
+
+. rename pct20204 pct_is
+
+. rename pct20205 pct_mp
+
+. rename pct20206 pct_mo
+
+. sum
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+  countyfips |          0
+      pct_bp |      1,737    3.501284    4.548215        .01      34.63
+      pct_ca |      2,928    12.50505    12.37012        .05      95.79
+      pct_ep |      3,088    23.72788    18.13599          0     452.45
+      pct_is |        666    1.227027    3.062875        .01      70.47
+-------------+---------------------------------------------------------
+      pct_mp |      3,080    8.954244    8.257278          0      69.45
+      pct_mo |      1,872    3.624135    10.16327         .1     113.39
+
+. 
+. tempfile religion
+
+. save `religion'
+file C:\Users\Neo\AppData\Local\Temp\ST_3f30_000001.tmp saved
+
+. 
+. ** research data
+. use "$data/resdata_for_desc.dta", clear
+
+. des, s
+
+Contains data from data/resdata_for_desc.dta
+  obs:        65,267                          
+ vars:            19                          12 Jun 2024 13:18
+Sorted by: 
+
+. merge m:1 countyfips using `religion', gen(mg)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                            65,267  (mg==3)
+    -----------------------------------------
+
+. tab mg, mi
+
+                     mg |      Freq.     Percent        Cum.
+------------------------+-----------------------------------
+            matched (3) |     65,267      100.00      100.00
+------------------------+-----------------------------------
+                  Total |     65,267      100.00
+
+. 
+. keep countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region
+
+. order countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region
+
+. sum
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+  countyfips |          0
+          mr |     65,148    .0971666    .1695274          0   3.928359
+      pct_bp |     36,477    3.501284    4.546968        .01      34.63
+      pct_ca |     61,487    12.50403    12.36559        .05      95.79
+      pct_ep |     64,847    23.72811    18.13324          0     452.45
+-------------+---------------------------------------------------------
+      pct_is |     13,986    1.227027    3.060684        .01      70.47
+      pct_mp |     64,679    8.954352    8.256019          0      69.45
+      pct_mo |     39,312    3.624135    10.16069         .1     113.39
+       trump |     65,204    65.06338    16.03411   8.730038   96.18182
+  income1000 |     65,225    54.86535    14.58187     22.292    147.111
+-------------+---------------------------------------------------------
+       metro |     65,267    .3732361    .4836678          0          1
+      region |     65,267    2.978427    1.037211          1          4
+
+. tab region, mi
+
+     region |      Freq.     Percent        Cum.
+------------+-----------------------------------
+  Northeast |      4,557        6.98        6.98
+    Midwest |     22,155       33.95       40.93
+       West |      8,694       13.32       54.25
+      South |     29,861       45.75      100.00
+------------+-----------------------------------
+      Total |     65,267      100.00
+
+. outreg2 mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region ///
+>         using "$results/table1.doc", replace label dec(2) sum(log) eqkeep(N mean sd min max)
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+          mr |     65,148    .0971666    .1695274          0   3.928359
+      pct_bp |     36,477    3.501284    4.546968        .01      34.63
+      pct_ca |     61,487    12.50403    12.36559        .05      95.79
+      pct_ep |     64,847    23.72811    18.13324          0     452.45
+      pct_is |     13,986    1.227027    3.060684        .01      70.47
+-------------+---------------------------------------------------------
+      pct_mp |     64,679    8.954352    8.256019          0      69.45
+      pct_mo |     39,312    3.624135    10.16069         .1     113.39
+       trump |     65,204    65.06338    16.03411   8.730038   96.18182
+  income1000 |     65,225    54.86535    14.58187     22.292    147.111
+       metro |     65,267    .3732361    .4836678          0          1
+-------------+---------------------------------------------------------
+      region |     65,267    2.978427    1.037211          1          4
+
+Following variable is string, not included:  
+countyfips  
+results/table1.doc
+dir : seeout
+
+. 
+. *==========================================================
+. * delete txt file
+. *==========================================================
+. cd "$results"
+C:\Users\Neo\Desktop\Religion_COVID\results
+
+. local txtfiles: dir . files "*.txt"
+
+. foreach txt of local txtfiles {
+  2.         erase `txt'
+  3. }
+
+. 
+. *==========================================================
+. * end logging
+. *==========================================================
+. // clear
+. log close _all
+      name:  <unnamed>
+       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table1.log
+  log type:  text
+ closed on:   5 May 2025, 10:10:26
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
