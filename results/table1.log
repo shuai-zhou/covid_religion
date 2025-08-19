@@ -1,8 +1,8 @@
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table1.log
+       log:  F:\OneDrive - southalabama.edu\covid_religion\results/table1.log
   log type:  text
- opened on:   5 May 2025, 10:10:24
+ opened on:  19 Aug 2025, 14:34:18
 
 . 
 . *==========================================================
@@ -101,7 +101,7 @@ xij variables:
 . tempfile religion
 
 . save `religion'
-file C:\Users\Neo\AppData\Local\Temp\ST_3f30_000001.tmp saved
+file C:\Users\SZHOU~1\AppData\Local\Temp\ST_29bc_000001.tmp saved
 
 . 
 . ** research data
@@ -131,70 +131,151 @@ Sorted by:
                   Total |     65,267      100.00
 
 . 
-. keep countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region
+. ** merge insurance, foreign born, and hospital data
+. merge m:1 countyfips year using "$data/county_newvars_fborn_uninsur_edu.dta", 
+> gen(mg1)
 
-. order countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                           315
+        from master                        80  (mg1==1)
+        from using                        235  (mg1==2)
+
+    matched                            65,187  (mg1==3)
+    -----------------------------------------
+
+. merge m:1 countyfips year using "$data/county_newvars_hosp.dta", gen(mg2)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                            29
+        from master                         0  (mg2==1)
+        from using                         29  (mg2==2)
+
+    matched                            65,502  (mg2==3)
+    -----------------------------------------
+
+. tab mg1, mi
+
+                    mg1 |      Freq.     Percent        Cum.
+------------------------+-----------------------------------
+        master only (1) |         80        0.12        0.12
+         using only (2) |        235        0.36        0.48
+            matched (3) |     65,187       99.48       99.96
+                      . |         29        0.04      100.00
+------------------------+-----------------------------------
+                  Total |     65,531      100.00
+
+. tab mg2, mi
+
+                    mg2 |      Freq.     Percent        Cum.
+------------------------+-----------------------------------
+         using only (2) |         29        0.04        0.04
+            matched (3) |     65,502       99.96      100.00
+------------------------+-----------------------------------
+                  Total |     65,531      100.00
+
+. keep if mg1 == 3
+(344 observations deleted)
+
+. des, s
+
+Contains data from data/resdata_for_desc.dta
+  obs:        65,187                          
+ vars:            33                          12 Jun 2024 13:18
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. keep countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 
+> uninsur fborn coll pcthis pctbla pctwhi pctasi metro region
+
+. order countyfips mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000
+>  uninsur fborn coll pcthis pctbla pctwhi pctasi metro region
 
 . sum
 
     Variable |        Obs        Mean    Std. Dev.       Min        Max
 -------------+---------------------------------------------------------
   countyfips |          0
-          mr |     65,148    .0971666    .1695274          0   3.928359
-      pct_bp |     36,477    3.501284    4.546968        .01      34.63
-      pct_ca |     61,487    12.50403    12.36559        .05      95.79
-      pct_ep |     64,847    23.72811    18.13324          0     452.45
+          mr |     65,068    .0972194    .1696179          0   3.928359
+      pct_bp |     36,397    3.506793    4.550271        .01      34.63
+      pct_ca |     61,407    12.48768    12.36325        .05      95.79
+      pct_ep |     64,767    23.74969    18.13393          0     452.45
 -------------+---------------------------------------------------------
-      pct_is |     13,986    1.227027    3.060684        .01      70.47
-      pct_mp |     64,679    8.954352    8.256019          0      69.45
-      pct_mo |     39,312    3.624135    10.16069         .1     113.39
-       trump |     65,204    65.06338    16.03411   8.730038   96.18182
-  income1000 |     65,225    54.86535    14.58187     22.292    147.111
+      pct_is |     13,906    1.229714     3.06854        .01      70.47
+      pct_mp |     64,599    8.958641    8.260157          0      69.45
+      pct_mo |     39,232    3.630717    10.16999         .1     113.39
+       trump |     65,124    65.09118    16.02306   8.730038   96.18182
+  income1000 |     65,145    54.83407    14.55999     22.292    147.111
 -------------+---------------------------------------------------------
-       metro |     65,267    .3732361    .4836678          0          1
-      region |     65,267    2.978427    1.037211          1          4
+     uninsur |     65,187    9.548715    5.051687          0   45.12262
+       fborn |     65,187    4.701868    5.653503          0   54.04992
+        coll |     65,187    23.21077    9.985776          0    78.8715
+      pcthis |     65,187    9.620126    13.97849          0   98.90211
+      pctbla |     65,187    9.105583    14.51269          0   87.79031
+-------------+---------------------------------------------------------
+      pctwhi |     65,187    82.15693    16.38997   4.755901        100
+      pctasi |     65,187    1.326684     2.45879          0   37.66696
+       metro |     65,187    .3726203    .4835059          0          1
+      region |     65,187    2.980855    1.035528          1          4
 
 . tab region, mi
 
      region |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-  Northeast |      4,557        6.98        6.98
-    Midwest |     22,155       33.95       40.93
-       West |      8,694       13.32       54.25
-      South |     29,861       45.75      100.00
+  Northeast |      4,477        6.87        6.87
+    Midwest |     22,155       33.99       40.85
+       West |      8,694       13.34       54.19
+      South |     29,861       45.81      100.00
 ------------+-----------------------------------
-      Total |     65,267      100.00
+      Total |     65,187      100.00
 
-. outreg2 mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 metro region ///
->         using "$results/table1.doc", replace label dec(2) sum(log) eqkeep(N mean sd min max)
+. outreg2 mr pct_bp pct_ca pct_ep pct_is pct_mp pct_mo trump income1000 uninsur 
+> fborn pcthis pctbla pctwhi pctasi metro region ///
+>         using "$results/table1.doc", replace label dec(2) sum(log) eqkeep(N me
+> an sd min max)
 
     Variable |        Obs        Mean    Std. Dev.       Min        Max
 -------------+---------------------------------------------------------
-          mr |     65,148    .0971666    .1695274          0   3.928359
-      pct_bp |     36,477    3.501284    4.546968        .01      34.63
-      pct_ca |     61,487    12.50403    12.36559        .05      95.79
-      pct_ep |     64,847    23.72811    18.13324          0     452.45
-      pct_is |     13,986    1.227027    3.060684        .01      70.47
+          mr |     65,068    .0972194    .1696179          0   3.928359
+      pct_bp |     36,397    3.506793    4.550271        .01      34.63
+      pct_ca |     61,407    12.48768    12.36325        .05      95.79
+      pct_ep |     64,767    23.74969    18.13393          0     452.45
+      pct_is |     13,906    1.229714     3.06854        .01      70.47
 -------------+---------------------------------------------------------
-      pct_mp |     64,679    8.954352    8.256019          0      69.45
-      pct_mo |     39,312    3.624135    10.16069         .1     113.39
-       trump |     65,204    65.06338    16.03411   8.730038   96.18182
-  income1000 |     65,225    54.86535    14.58187     22.292    147.111
-       metro |     65,267    .3732361    .4836678          0          1
+      pct_mp |     64,599    8.958641    8.260157          0      69.45
+      pct_mo |     39,232    3.630717    10.16999         .1     113.39
+       trump |     65,124    65.09118    16.02306   8.730038   96.18182
+  income1000 |     65,145    54.83407    14.55999     22.292    147.111
+     uninsur |     65,187    9.548715    5.051687          0   45.12262
 -------------+---------------------------------------------------------
-      region |     65,267    2.978427    1.037211          1          4
+       fborn |     65,187    4.701868    5.653503          0   54.04992
+        coll |     65,187    23.21077    9.985776          0    78.8715
+      pcthis |     65,187    9.620126    13.97849          0   98.90211
+      pctbla |     65,187    9.105583    14.51269          0   87.79031
+      pctwhi |     65,187    82.15693    16.38997   4.755901        100
+-------------+---------------------------------------------------------
+      pctasi |     65,187    1.326684     2.45879          0   37.66696
+       metro |     65,187    .3726203    .4835059          0          1
+      region |     65,187    2.980855    1.035528          1          4
 
 Following variable is string, not included:  
 countyfips  
+C:\Users\S Zhou\ado\plus/o/outreg2.ado
 results/table1.doc
 dir : seeout
 
+. 
+. ** please note, the max for % of evangelican protestant was originally 452.45
+. ** which does not make sense, since this is a percentage measure at the county
+>  level
+. ** and it was replaced with 100 in table 1
 . 
 . *==========================================================
 . * delete txt file
 . *==========================================================
 . cd "$results"
-C:\Users\Neo\Desktop\Religion_COVID\results
+F:\OneDrive - southalabama.edu\covid_religion\results
 
 . local txtfiles: dir . files "*.txt"
 
@@ -209,7 +290,7 @@ C:\Users\Neo\Desktop\Religion_COVID\results
 . // clear
 . log close _all
       name:  <unnamed>
-       log:  C:\Users\Neo\Desktop\Religion_COVID\results/table1.log
+       log:  F:\OneDrive - southalabama.edu\covid_religion\results/table1.log
   log type:  text
- closed on:   5 May 2025, 10:10:26
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ closed on:  19 Aug 2025, 14:34:21
+--------------------------------------------------------------------------------
